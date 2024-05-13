@@ -1,0 +1,8 @@
+# ignore the following files when pushing to Github
+
+# Regular Python bytecode file
+*.pyc
+__pycache__/
+
+# pytest cache folder
+.*cache
