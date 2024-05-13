@@ -1,4 +1,4 @@
-from samples import Sample
+from ._sample_base import SampleBase
 import sympy as sp
 
 class RandVarBase:
@@ -24,8 +24,8 @@ class RandVarBase:
 		sf: int = RandVarBase.SIGFIGS
 		for sample, probability in pspace.items():
 
-			if not isinstance(sample, Sample):
-				raise TypeError(f"{sample} is not a {Sample.__name__} type object")
+			if not isinstance(sample, SampleBase):
+				raise TypeError(f"{sample} is not a {SampleBase.__name__} type object")
 			if not sample.name == name:
 				raise NameError(f"{sample} erroneously assigned to {name}")
 			
@@ -72,8 +72,9 @@ class RandVarBase:
 		return hash(name) + hash(pspace_tuple)
 	
 	def __str__(self) -> str:
-		string: str = f"{self.name}\tPr({self.name})"
-		for sample, prob in self.pspace.items():
-			string += f"\n{sample}\t{round(prob, self.SIGFIGS)}"
+		string: str = f"Random variable {self.name}"
+		for sample, probability in self.pspace.items():
+			probability = round(probability, self.SIGFIGS)
+			string += f"\n{sample}\t{probability = }"
 
 		return string

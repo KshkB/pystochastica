@@ -1,48 +1,125 @@
 """
 random variables and random vectors call on JointDistribution to evaluate probabilities
 """
-from ._randvar_base import RandVarBase
 from ._sample_base import SampleBase
-import sympy as sp
-
+from ._randvar_base import RandVarBase
+import numpy as np
 class JointDistribution:
 
-    def __new__(cls, *randvars, **joint_pspace):
-        """
-        for randvars pass RandVar or RandVarBase objects, (X, Y, ...)
-        for joint_pspace pass dict {(X.sample, Y.sample, ...): prob}
-        """
-        # validation, each randvar in randvars is a RandVarBase object
-        if not all(isinstance(rv, RandVarBase) for rv in randvars):
-            raise TypeError(f"not all random variables are type {RandVarBase.__name__} objects")
+    SIGFIGS: int = 8 # default numerical accuracy for probabilities
 
-        # validate joint_pspace keys 
-        for sample_tuple in joint_pspace.keys():
-            if not all(isinstance(sample, SampleBase) for sample in sample_tuple):
-                raise TypeError(f"joint_dist keys are not all of type {SampleBase.__name__}")
-            
-            for i, sample in enumerate(sample_tuple):
-                if not sample.name == randvars[i]:
-                    raise NameError(f"name mismatch, got {sample.name} but expected {randvars[i].name}")
-                
-        # validate joint_pspace probabilities
-        sf: int = max([rv.SIGFIGS for rv in randvars])
-        probabilities_sum: float = sum(joint_pspace.values())
-        if not round(probabilities_sum, sf) == 1.0:
-            raise ValueError(f"total law of probability violated, got {probabilities_sum} but expected {1.0}")
+    def __new__(cls, **kwargs):
+        """
+        pass dict {tuple[Sample]: float} 
+            - e.g., {(sample1, sample2, ...): prob}
+        
+        Note. Random variables are marginals as derived from the joint distribution
+        If random variables are passed individually, it means they are independent
+            - independent variables are marginals of joint distributions if the joint distribution is the product distribution
+            - i.e., if P(X, Y) = P(X)P(Y), which just means (X, Y) are independent
+        """
+        pspace: dict = kwargs['pspace']
+        
+        # validation of pspace keys, must be all of type Sample
+        if not all(isinstance(sample, SampleBase) for sample_tuple in pspace.keys() for sample in sample_tuple):
+            raise TypeError(f"not all samples in the probability space are of type {SampleBase.__name__}")
+        
+        # validation, each sample tuple must have the same length
+        dimension = next(len(sample_tuple) for sample_tuple in pspace.keys())
+        for sample_tuple in pspace.keys():
+            if not len(sample_tuple) == dimension:
+                raise ValueError(f"dimension mismatch, got {len(sample_tuple)}-dimensional for {sample_tuple} but expected {dimension}-dimensional")
+
+        # validation, sample name at each index must coincide
+        stacked = []
+        for sample_tuple in pspace.keys():
+            try:
+                stacked = np.vstack([stacked, np.array([sample.name for sample in sample_tuple])])
+            except ValueError:
+                stacked = np.array([sample.name for sample in sample_tuple])
+
+        if not all(len(set(stacked[:,i])) == 1 for i in range(dimension)):
+            raise IndexError("sample index mismatch, all sample names at a given index must coincide")
+        
+        # validation, total law of probability
+        all_probabilities: float = sum(pspace.values())
+        try:
+            sf: int = kwargs['SIGFIGS']
+        except KeyError:
+            sf: int = JointDistribution.SIGFIGS
+
+        all_probabilities: float = round(all_probabilities, sf)
+        if not all_probabilities == 1.0:
+            raise ValueError(f"total law of probability violated, all probabilities must sum to {1.0} but got {round(all_probabilities, sf)}")
 
         return super(JointDistribution, cls).__new__(cls)
 
-    def __init__(self, *randvars , **joint_pspace) -> None:
+    def __init__(self, **kwargs) -> None:
         
-        self.name: tuple[sp.Expr] = tuple([rv.name for rv in randvars])
-        self.pspace: dict = joint_pspace
+        self.pspace: dict = kwargs['pspace']
+        self.name: list = [sample.name for sample in next(s for s in self.pspace.keys())]
+        try:
+            self.SIGFIGS: int = kwargs['SIGFIGS']
+        except KeyError:
+            pass 
 
+        self.dimension: int = next(len(sample_tuple) for sample_tuple in self.pspace.keys())
+
+    def derive_marginals(self) -> None:
+        """
+        generate marginal distributions from joint distributions as RandVar objects, store marginals as list[RandVar]
+            - i.e., jd(X, Y, ...) -> [mX, mY, ...]
+        Note. (X, Y, ...) args in jd are not RandVar objects; the marginals [mX, mY, ...] define dependent random variables
+        """
+        sf: int = self.SIGFIGS
+        jdist_pspace: dict = self.pspace
+        marginals: list = []
+        for i in range(self.dimension):
+            rv_name = next(sample for sample in jdist_pspace.keys())[i].name
+            rv_pspace: dict = {}
+            for sample_tuple, prob in jdist_pspace.items():
+                sample: SampleBase = sample_tuple[i]
+                try:
+                    rv_pspace[sample] += prob
+                except KeyError:
+                    rv_pspace[sample] = prob
+
+            marginals += [RandVarBase(**{'name': rv_name, 'pspace': rv_pspace, 'SIGFIGS': sf})]
+
+        self.marginals: list[RandVarBase] = marginals
+            
     def __str__(self) -> str:
-        pass
+        string: str = f"Joint Probability Distribution {*self.name,}"
+        for sample_tuple, probability in self.pspace.items():
+            string += "\n"
+            for i, sample in enumerate(sample_tuple):
+                if i != len(sample_tuple)-1:
+                    string += f"{sample!s} AND "
+                else:
+                    string += f"{sample!s}"
+            string += f"\t{probability = }"
+
+        return string
+    
+    def to_tuple(self) -> tuple:
+        """self.pspace rendered as hashable tuple"""
+        pspace: dict = self.pspace
+        return tuple([(s, p) for s, p in pspace.items()])
 
     def __eq__(self, second_joint_dist: object) -> bool:
-        pass 
+
+        sf: int = max(self.SIGFIGS, second_joint_dist.SIGFIGS)
+        if not set(self.name) == set(second_joint_dist):
+            return False
+
+        if not set(self.pspace.keys()) == set(second_joint_dist.pspace.keys()):
+            return False
+        
+        for key, prob in self.pspace.items():
+            if not round(second_joint_dist[key], sf) == round(prob, sf):
+                return False
+            
+        return True
 
     def __hash__(self) -> int:
-        pass
+        return hash(self.to_tuple())

@@ -1,4 +1,5 @@
-from core import SampleBase
+from ..core import SampleBase
+# from core import SampleBase
 """
 implementation of calculi for Sample objects as derived from SampleBase 
 calculi includes:

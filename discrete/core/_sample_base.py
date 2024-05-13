@@ -48,4 +48,4 @@ class SampleBase:
 		return hash(self.name) + hash(self.value)
 	
 	def __str__(self) -> str:
-		return (self.name, self.value)
+		return f"{*(self.name, self.value),}"

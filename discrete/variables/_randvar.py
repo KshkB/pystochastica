@@ -1,7 +1,6 @@
-from core import RandVarBase
-from samples import Sample
-from utils import convolve_dicts, dict_mul
-import numpy as np
+from ..core import RandVarBase
+from ..samples import Sample
+from ..utils import convolve_dicts, dict_mul
 """
 implementation of calculi for discrete RandVar objects (= discrete random variables)
 calculi implemented:
@@ -64,6 +63,9 @@ class RandVar(RandVarBase):
 					Sample(**{'name': new_name, 'value': round(value, sf)}): prob for value, prob in new_pspace_dict.items()
 				}
 		return RandVar(**{'name': new_name, 'pspace': new_pspace})
+	
+	def __rmul__(self, second_rv):
+		return self.__mul__(second_rv)
 
 	def __sub__(self, second_rv):
 		second_rv = (-1)*second_rv
@@ -82,9 +84,12 @@ class RandVar(RandVarBase):
 			return self 
 		
 		new_name = self.name**power
-		new_pspace: dict = {
-				sample**power: prob for sample, prob in self.pspace.items()
-			}
+		new_pspace: dict = {}
+		for sample, prob in self.pspace.items():
+			try:
+				new_pspace[sample**power] += prob
+			except KeyError:
+				new_pspace[sample**power] = prob
 		return RandVar(**{'name': new_name, 'pspace': new_pspace})
 
 	def calculate_expectation(self) -> None:
