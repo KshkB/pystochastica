@@ -65,11 +65,12 @@ class JointDistribution:
 
         self.dimension: int = next(len(sample_tuple) for sample_tuple in self.pspace.keys())
 
-    def derive_marginals(self) -> None:
+    def derive_marginals(self, inplace=False) -> None:
         """
         generate marginal distributions from joint distributions as RandVar objects, store marginals as list[RandVar]
             - i.e., jd(X, Y, ...) -> [mX, mY, ...]
         Note. (X, Y, ...) args in jd are not RandVar objects; the marginals [mX, mY, ...] define dependent random variables
+            - marginals mX, mY, ... are RandVarBase objects
         """
         sf: int = self.SIGFIGS
         jdist_pspace: dict = self.pspace
@@ -86,8 +87,63 @@ class JointDistribution:
 
             marginals += [RandVarBase(**{'name': rv_name, 'pspace': rv_pspace, 'SIGFIGS': sf})]
 
-        self.marginals: list[RandVarBase] = marginals
-            
+        if inplace == True:
+            return marginals
+        else:
+            self.marginals: list[RandVarBase] = marginals
+
+    @property
+    def margs(self):
+        return self.derive_marginals(inplace=True)
+
+    def derive_secondaries(self, inplace=False) -> None:
+        """
+        generate secondaries from joint distribution
+            - analogue of product XY for independent random variables X, Y
+            - store or return list[RandVarBase] objects
+        Note. Cannot simply take product mXmY for marginals mX, mY 
+            - mX, mY are assumed to be independent if extracted individually
+        """
+        if self.dimension == 1:
+            """return RandVarBase initialised for RandVar object"""
+            secondary = RandVarBase(name=(next(sample.name for sample in self.pspace.keys())[0]), pspace=self.pspace)
+            secondaries = [secondary]
+            if inplace == True:
+                return secondaries 
+            else:
+                self.secondaries = secondaries
+                return
+        
+        sf: int = self.SIGFIGS
+        jdist_pspace: dict = self.pspace
+        secondaries: list = []
+        for i in range(self.dimension-1):
+            rv_i_name = next(sample for sample in jdist_pspace.keys())[i]
+            for j in range(i+1, self.dimension):
+                rv_j_name = next(sample for sample in jdist_pspace.keys())[j]
+
+                rvrv_pspace: dict = {}
+                name = rv_i_name.name*rv_j_name.name
+                for sample_tuple, prob in jdist_pspace.items():
+                    sample_name = name
+                    sample_value = sample_tuple[i].value * sample_tuple[j].value
+                    sample = SampleBase(name=sample_name, value=sample_value)
+                    try:
+                        rvrv_pspace[sample] += prob 
+                    except KeyError:
+                        rvrv_pspace[sample] = prob        
+
+                secondaries += [RandVarBase(name=name, pspace=rvrv_pspace, SIGFIGS=sf)]
+
+        if inplace == True:
+            return secondaries
+        else:
+            self.secondaries: list[RandVarBase] = secondaries
+
+    @property
+    def secnds(self):
+        return self.derive_secondaries(inplace=True)
+
     def __str__(self) -> str:
         string: str = f"Joint Probability Distribution {*self.name,}"
         for sample_tuple, probability in self.pspace.items():

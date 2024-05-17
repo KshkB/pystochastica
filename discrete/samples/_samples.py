@@ -1,10 +1,10 @@
-from ..core import SampleBase
-# from core import SampleBase
 """
 implementation of calculi for Sample objects as derived from SampleBase 
 calculi includes:
 	- addition, subtraction, multiplication, exponentiation 
 """
+from ..core import SampleBase
+
 class Sample(SampleBase):
 
 	def __init__(self, **kwargs) -> None:

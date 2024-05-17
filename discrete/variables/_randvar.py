@@ -1,6 +1,3 @@
-from ..core import RandVarBase
-from ..samples import Sample
-from ..utils import convolve_dicts, dict_mul
 """
 implementation of calculi for discrete RandVar objects (= discrete random variables)
 calculi implemented:
@@ -11,6 +8,10 @@ functionality:
 	- joint_distributions facilitate lookups to implement calculi for dependent random variables
 	- warning: for more than two dependent random variables, use RandVec objects
 """
+from ..core import RandVarBase
+from ..samples import Sample
+from ..utils import convolve_dicts, dict_mul
+import numpy as np
 class RandVar(RandVarBase):
 
 	def __init__(self, **kwargs):
@@ -92,24 +93,54 @@ class RandVar(RandVarBase):
 				new_pspace[sample**power] = prob
 		return RandVar(**{'name': new_name, 'pspace': new_pspace})
 
-	def calculate_expectation(self) -> None:
+	def calculate_expectation(self, inplace=False) -> None:
 		
 		expectation: float = 0.0
 		for sample, prob in self.pspace.items():
 			expectation += sample.value*prob
-		
-		self.expectation: float = expectation
 
-	def calculate_variance(self) -> None:
+		if inplace == True:
+			return expectation
+		else:
+			self.expectation: float = expectation
 
-		try:
-			expectation: float = self.expectation
-		except AttributeError:
-			self.calculate_expectation()
-			return self.calculate_variance()
-		
+	@property
+	def E(self):
+		return self.calculate_expectation(inplace=True)
+
+	def calculate_variance(self, inplace=False) -> None:
+
+		expectation: float = self.E
 		square_expectation: float = 0.0
 		for sample, prob in self.pspace.items():
 			square_expectation += (sample.value**2)*prob 
 		
-		self.variance: float = square_expectation - expectation**2
+		if inplace==True: 
+			# inplace is True, do not store output
+			return square_expectation - expectation**2
+		else:
+			# inplace is False, store output as class attr
+			self.variance: float = square_expectation - expectation**2
+		
+	@property 
+	def V(self):
+		return self.calculate_variance(inplace=True)
+	
+	def Prob(self, predicate: str) -> float:
+		rsult: float = 0.0
+		for sample, prob in self.pspace.items():
+			stmnt = f"{sample.value}" + predicate
+			if eval(stmnt):
+				rsult += prob 
+			else:
+				pass 
+		return rsult
+
+	def generate(self, iterations: int) -> np.ndarray:
+		sample_values = [sample.value for sample in self.pspace.keys()]
+		probabilities = list(self.pspace.values())
+		out = np.random.choice(sample_values, iterations, probabilities)
+
+		return out
+
+	

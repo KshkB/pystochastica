@@ -3,7 +3,7 @@ import sympy as sp
 
 class RandVarBase:
 
-	SIGFIGS: int = 8 # default numerical accuracy for probabilities
+	SIGFIGS: int = 5 # default numerical accuracy for probabilities
 
 	def __new__(cls, **kwargs):
 		
@@ -54,7 +54,7 @@ class RandVarBase:
 	def to_tuple(self) -> tuple:
 		"""cast pspace to a tuple object"""
 		pspace = self.pspace
-		return tuple([(k, v) for k, v in pspace.items()])
+		return tuple([(k, round(v, self.SIGFIGS)) for k, v in pspace.items()])
 
 	def __eq__(self, second_rv: object) -> bool:
 

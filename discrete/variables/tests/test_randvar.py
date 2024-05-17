@@ -88,3 +88,26 @@ def test_randvar_arithmetic():
     assert round(rvW.expectation, sf) == round(2*rvX2.expectation + 1.3*rvX.expectation*rvY.expectation\
                                             - 0.2*rvZ3.expectation, sf)
     
+def test_randvar_shorthand():
+
+    X_pspace = rvdict_to_pspace(X_dict)
+    rvX = RandVar(name=X, pspace=X_pspace)
+    rvX.calculate_expectation()
+    rvX.calculate_variance()
+
+    sf: int = rvX.SIGFIGS
+    assert round(rvX.E, sf) == round(rvX.expectation, sf)
+    assert round(rvX.V, sf) == round(rvX.variance, sf)
+
+def test_randvar_prob():
+
+    rvX = RandVar(name=X, pspace=rvdict_to_pspace(X_dict))
+    rvY = RandVar(name=Y, pspace=rvdict_to_pspace(Y_dict))
+    rvZ = RandVar(name=Z, pspace=rvdict_to_pspace(Z_dict))
+
+    U = rvX + rvY + rvZ 
+    sf = U.SIGFIGS
+    print(f"{U.Prob('<= 1') = :.{sf}f}")
+
+    assert isinstance(U.Prob('<= 1'), float)
+

@@ -29,3 +29,16 @@ def test_jd_change_sigfigs():
     assert jd.SIGFIGS == 10
     for mg_var in jd.marginals:
         assert mg_var.SIGFIGS == 10
+
+def test_jd_secondaries():
+    jd = JointDistribution(pspace=jd_init_dict)
+    jd.derive_secondaries()
+    assert len(jd.secondaries) == 1
+
+def test_jd_shorthands():
+    jd = JointDistribution(pspace=jd_init_dict)
+    for sc in jd.secnds:
+        print(sc)
+    assert len(jd.margs) == jd.dimension
+    assert len(jd.secnds) == 1
+
