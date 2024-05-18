@@ -5,6 +5,7 @@ import numpy as np
 
 def randvar_base_descent(*randvarbases) -> list[RandVar]:
     return [RandVar(name=rv.name, pspace=rv.pspace) for rv in randvarbases]
+
 class RandVec(JointDistribution):
 
     def __init__(self, **joint_pspace: dict) -> None:

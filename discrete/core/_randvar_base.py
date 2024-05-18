@@ -1,5 +1,6 @@
 from ._sample_base import SampleBase
 import sympy as sp
+from decimal import Decimal
 
 class RandVarBase:
 

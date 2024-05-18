@@ -10,8 +10,10 @@ functionality:
 """
 from ..core import RandVarBase
 from ..samples import Sample
+from ..simulations import RandVarSimulator
 from ..utils import convolve_dicts, dict_mul
 import numpy as np
+
 class RandVar(RandVarBase):
 
 	def __init__(self, **kwargs):
@@ -143,4 +145,10 @@ class RandVar(RandVarBase):
 
 		return out
 
-	
+	def pdf(self, **kwargs):
+		rv_sim = RandVarSimulator(**kwargs)
+		rv_sim.pdfs(self)
+
+	def cdf(self, **kwargs):
+		rv_sim = RandVarSimulator(**kwargs)
+		rv_sim.cdfs(self)

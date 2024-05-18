@@ -27,7 +27,7 @@ class RandVarSimulator:
         iterations: int = self.ITERATIONS
         ncols: int = 1 if len(randvars) == 1 else 2
         nrows: int = sum(divmod(len(randvars), 2))
-        fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=self.FIGSIZE)
+        fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=self.FIGSIZE, squeeze=False)
 
         # get data from kwargs
         title: str = kwargs['title'] + f" after {iterations = }"
@@ -35,6 +35,8 @@ class RandVarSimulator:
         xlabel: str = kwargs['xlabel']
         ylabel: str = kwargs['ylabel']
         plt_data: dict = kwargs['plt_data']
+        plt_type: str = kwargs['plt_type']
+        plt_kwargs: dict = kwargs['plt_kwargs']
 
         # generate subplots
         fig.suptitle(f"{title}")
@@ -51,7 +53,8 @@ class RandVarSimulator:
                     axs[i, j].set_xlabel(f"{xlabel}")
                     axs[i, j].set_xticks(x)
                     axs[i, j].set_ylabel(f"{ylabel}")
-                    axs[i, j].bar(x, y, width=0.95)
+                    getattr(axs[i, j], f'{plt_type}')(x, y, **plt_kwargs)
+                    # axs[i, j].bar(x, y, width=0.95)
                 except IndexError:
                     axs[i, j].axis("off")
 
@@ -71,14 +74,18 @@ class RandVarSimulator:
             rv_outcomes = dict(sorted(rv_outcomes.items())) # sorted by key
             plt_data[randvar]['x'] = list(rv_outcomes.keys())
             plt_data[randvar]['y'] = list(rv_outcomes.values())
+            plt_type: str = 'bar'
+            plt_kwargs: dict = {'width': 0.95}
 
         # return self.plot()
         self.plot(*randvars, **{
-            'title': f'Probability distributions for {', '.join([rv.name for rv in randvars])}',
+            'title': f"Probability distributions for {', '.join([f'{rv.name}' for rv in randvars])}",
             'plot_title': 'Probability distribution',
             'xlabel': 'outcomes',
             'ylabel': 'frequency',
-            'plt_data': plt_data
+            'plt_data': plt_data,
+            'plt_type': plt_type,
+            'plt_kwargs': plt_kwargs
             })
 
     def cdfs(self, *randvars):
@@ -90,13 +97,17 @@ class RandVarSimulator:
             y = [randvar.Prob(f'<= {val}') for val in x]
             plt_data[randvar]['x'] = x
             plt_data[randvar]['y'] = y 
+            plt_type: str = 'plot'
+            plt_kwargs: dict = {'c': 'r'}
 
         self.plot(*randvars, **{
-            'title': f"Cumulative distribution for {', '.join([rv.name for rv in randvars])}",
+            'title': f"Cumulative distribution for {', '.join([f'{rv.name}' for rv in randvars])}",
             'plot_title': 'Cumulative distribution',
             'xlabel': 'outcomes',
             'ylabel': 'probability',
-            'plt_data': plt_data
+            'plt_data': plt_data,
+            'plt_type': plt_type,
+            'plt_kwargs': plt_kwargs
             })
 
 
