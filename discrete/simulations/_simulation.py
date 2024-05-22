@@ -54,7 +54,6 @@ class RandVarSimulator:
                     axs[i, j].set_xticks(x)
                     axs[i, j].set_ylabel(f"{ylabel}")
                     getattr(axs[i, j], f'{plt_type}')(x, y, **plt_kwargs)
-                    # axs[i, j].bar(x, y, width=0.95)
                 except IndexError:
                     axs[i, j].axis("off")
 
