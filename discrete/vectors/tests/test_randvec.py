@@ -116,6 +116,19 @@ def test_randvec_matmul():
     assert round(rvec_matmul_sum.expectation, sf) == round(rvec_sum.expectation, sf)
     assert round(rvec_matmul_sum.variance, sf) == round(rvec_sum.variance, sf)
 
+def test_depsum():
+    X = sp.Symbol('X')
+    jd_XX = {
+        (Sample(name=X, value=-1), Sample(name=X, value=1)): 0.0,
+        (Sample(name=X, value=1), Sample(name=X, value=1)): 0.5,
+        (Sample(name=X, value=-1), Sample(name=X, value=-1)): 0.5,
+        (Sample(name=X, value=1), Sample(name=X, value=-1)): 0.0,
+        }
+    rvec = RandVec(pspace=jd_XX)
+    rv = rvec@[1, -1]
+    zero_rv = RandVar(name=sp.S.Zero, pspace={Sample(name=sp.S.Zero, value=0): 1.0})
+    assert rv == zero_rv
+
 def test_randvec_jd_randjd():
     random_randvec = RandVec(pspace=generate_jdist_random(dimension=5))
     sf = random_randvec.SIGFIGS
