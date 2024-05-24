@@ -1,6 +1,0 @@
-README.md
-setup.py
-pystochastica.egg-info/PKG-INFO
-pystochastica.egg-info/SOURCES.txt
-pystochastica.egg-info/dependency_links.txt
-pystochastica.egg-info/top_level.txt
