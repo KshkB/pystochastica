@@ -3,7 +3,7 @@ from setuptools import setup
 if __name__ == '__main__':
     setup(
         name='pystochastica',
-        description='Computer alegbra systrem for stochastic (random) variables',
+        description='An open source stochastic calculus library written in Python',
         url='https://github.com/KshkB/pystochastica/',
         author='Kowshik Bettadapura',
         author_email='k.bettad@gmail.com',
