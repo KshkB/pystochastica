@@ -1,6 +1,8 @@
-from ..core import SampleBase, JointDistribution
+from ..core import SampleBase
 from itertools import product
 from  functools import reduce
+from decimal import Decimal
+from fractions import Fraction
 import numpy as np
 import sympy as sp
 
@@ -15,7 +17,7 @@ def generate_jdist(*marginals) -> dict:
     """
     sample_prob_pairs_list = []
     for mg_rv in marginals:
-        sample_prob_pairs = [(sample, prob) for sample, prob in mg_rv.pspace.items()]
+        sample_prob_pairs = [(sample, Decimal(str(prob))) for sample, prob in mg_rv.pspace.items()]
         sample_prob_pairs_list += [sample_prob_pairs]
 
     sample_prob_pairs_all = product(*sample_prob_pairs_list)
@@ -33,7 +35,6 @@ def generate_jdist(*marginals) -> dict:
 
 def generate_jdist_random(\
         dimension: int = 3, 
-        SAMPLE_sf: int = 2, 
         SAMPLE_SIZE_RANGE: tuple = (2, 6), 
         SAMPLE_VALUES: tuple = (-50, 50), 
         MIN: int = 1, 
@@ -52,12 +53,12 @@ def generate_jdist_random(\
     for sample_name in sample_names:
         num_samples: int = np.random.randint(*SAMPLE_SIZE_RANGE)
         for _ in range(num_samples):
-            value = round(np.random.uniform(*SAMPLE_VALUES), SAMPLE_sf) 
+            value = Decimal(str(np.random.uniform(*SAMPLE_VALUES)))
             sample_object = SampleBase(name=sample_name, value=value)
             samples[sample_name] += [sample_object]
 
     jd_samples: list = list(product(*list(samples.values())))
     jd_sample_size: int = len(jd_samples)
     probabilities_pre = [np.random.randint(MIN, MAX) for _ in range(jd_sample_size)]
-    probabilities = [p / sum(probabilities_pre) for p in probabilities_pre]
+    probabilities = [Fraction(pre, sum(probabilities_pre)) for pre in probabilities_pre]
     return dict(zip(jd_samples, probabilities))

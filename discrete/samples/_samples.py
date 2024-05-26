@@ -1,9 +1,17 @@
 """
 implementation of calculi for Sample objects as derived from SampleBase 
 calculi includes:
-	- addition, subtraction, multiplication, exponentiation 
+	- addition, subtraction, multiplication, exponentiation
+	- ints or floats are converted to Decimal in order to ensure arithmetical accuracy
+	- Fraction objects are kept as raw
+Note:
+	- Decimal + Fraction results in TypeError, this will NOT be rectified in backend 
+	- user will need to manage these issues directly in scripting
 """
 from ..core import SampleBase
+from decimal import Decimal, InvalidOperation
+from fractions import Fraction
+import sympy as sp
 
 class Sample(SampleBase):
 
@@ -12,38 +20,40 @@ class Sample(SampleBase):
 
 	def __add__(self, second_sample):
 		
-		if isinstance(second_sample, (int, float)):
-			sf: int = self.SIGFIGS
-			second_sample = round(second_sample, sf)
-
+		if isinstance(second_sample, (int, float, Decimal, Fraction)):
+			try:
+				second_sample = Decimal(str(second_sample))
+			except InvalidOperation:
+				"""second_sample is a Fraction object"""
+				pass
 			new_name = self.name + second_sample
-			new_value = round(self.value + second_sample, sf)
+			new_value = self.value + second_sample
 		else:
-			sf: int = max(self.SIGFIGS, second_sample.SIGFIGS)
-
 			new_name = self.name + second_sample.name 
-			new_value = round(self.value + second_sample.value, sf)
+			new_value = self.value + second_sample.value
 
-		return Sample(**{'name': new_name, 'value': new_value, 'SIGFIGS': sf})
+		new_name = sp.nsimplify(new_name)
+		return Sample(**{'name': new_name, 'value': new_value})
 
 	def __radd__(self, second_sample):
 		return self.__add__(second_sample)
 	
 	def __mul__(self, second_sample):
 
-		if isinstance(second_sample, (int, float)):
-			sf: int = self.SIGFIGS
-			second_sample = round(second_sample, sf)
-
+		if isinstance(second_sample, (int, float, Decimal, Fraction)):
+			try:
+				second_sample = Decimal(str(second_sample))
+			except InvalidOperation:
+				"""second_sample is a Fractio object"""
+				pass
 			new_name = self.name * second_sample
-			new_value = round(self.value * second_sample, sf)
+			new_value = self.value * second_sample
 		else:
-			sf: int = max(self.SIGFIGS, second_sample.SIGFIGS)
-			
 			new_name = self.name * second_sample.name
-			new_value = round(self.value * second_sample.value, sf)
-
-		return Sample(**{'name': new_name, 'value': new_value, 'SIGFIGS': sf})
+			new_value = self.value * second_sample.value
+			
+		new_name = sp.nsimplify(new_name)
+		return Sample(**{'name': new_name, 'value': new_value})
 
 	def __rmul__(self, second_sample):
 		return self.__mul__(second_sample)

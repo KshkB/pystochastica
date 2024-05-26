@@ -1,10 +1,9 @@
 from ._sample_base import SampleBase
 import sympy as sp
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
+from fractions import Fraction
 
 class RandVarBase:
-
-	SIGFIGS: int = 5 # default numerical accuracy for probabilities
 
 	def __new__(cls, **kwargs):
 		
@@ -22,7 +21,6 @@ class RandVarBase:
 			raise ValueError("not all samples are unique")
 
 		# pspace validation, keys are Sample objects, values are probabilities
-		sf: int = RandVarBase.SIGFIGS
 		for sample, probability in pspace.items():
 
 			if not isinstance(sample, SampleBase):
@@ -30,32 +28,35 @@ class RandVarBase:
 			if not sample.name == name:
 				raise NameError(f"{sample} erroneously assigned to {name}")
 			
-			probability_rounded = round(probability, sf)
-			if not (0 <= probability_rounded and probability_rounded <= 1):
+			probability_dec = Decimal(str(float(probability)))
+			if not (Decimal('0') <= probability_dec and probability_dec <= Decimal('1')):
 				raise ValueError(f"{probability} is not a valid probability")
 
 		# validation, total law of probability
-		all_probabilities: list[float] = pspace.values()
-		total: float = round(sum(all_probabilities), sf)
-		if not total == 1.0:
+		try:
+			all_probabilities: list[Decimal] = [Decimal(str(v)) for v in pspace.values()]
+		except InvalidOperation:
+			all_probabilities: list = list(pspace.values())
+
+		total: Decimal = Decimal(str(float(sum(all_probabilities))))
+		if not total == Decimal('1.0'):
 			raise ValueError(f"total law of probability violated, got {total} but expected {1.0}")
 
 		return super(RandVarBase, cls).__new__(cls)
 
 	def __init__(self, **kwargs):
-		
-		try:
-			self.SIGFIGS: int = kwargs['SIGFIGS']
-		except KeyError:
-			pass 
 
 		self.name: sp.Expr = kwargs['name']
-		self.pspace: dict = {k: v for k, v in kwargs['pspace'].items() if round(v, self.SIGFIGS) != 0}
+		try:
+			self.pspace: dict = {k: Decimal(str(v)) for k, v in kwargs['pspace'].items() if Decimal(str(v)) != Decimal('0')}
+		except InvalidOperation:
+			"""kwargs['pspace'].values() are Fraction objects, leave as raw"""
+			self.pspace: dict = kwargs['pspace']
 
 	def to_tuple(self) -> tuple:
 		"""cast pspace to a tuple object"""
 		pspace = self.pspace
-		return tuple([(k, round(v, self.SIGFIGS)) for k, v in pspace.items()])
+		return tuple([(k, v) for k, v in pspace.items()])
 
 	def __eq__(self, second_rv: object) -> bool:
 
@@ -75,7 +76,6 @@ class RandVarBase:
 	def __str__(self) -> str:
 		string: str = f"Random variable {self.name}"
 		for sample, probability in self.pspace.items():
-			probability = round(probability, self.SIGFIGS)
 			string += f"\n{sample}\t{probability = }"
 
 		return string

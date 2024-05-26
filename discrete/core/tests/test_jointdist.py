@@ -22,14 +22,6 @@ def test_jd_marginals():
         print(mg_var)
     assert len(jd.marginals) == jd.dimension
 
-def test_jd_change_sigfigs():
-    jd = JointDistribution(pspace=jd_init_dict, SIGFIGS=10)
-    jd.derive_marginals()
-    
-    assert jd.SIGFIGS == 10
-    for mg_var in jd.marginals:
-        assert mg_var.SIGFIGS == 10
-
 def test_jd_secondaries():
     jd = JointDistribution(pspace=jd_init_dict)
     jd.derive_secondaries()

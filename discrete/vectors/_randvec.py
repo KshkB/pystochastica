@@ -1,7 +1,10 @@
 from ..core import JointDistribution
 from ..variables import RandVar
 from ..utils import generate_jdist
+from decimal import Decimal, InvalidOperation
+from fractions import Fraction
 import numpy as np
+import sympy as sp
 
 def randvar_base_descent(*randvarbases) -> list[RandVar]:
     return [RandVar(name=rv.name, pspace=rv.pspace) for rv in randvarbases]
@@ -25,7 +28,12 @@ class RandVec(JointDistribution):
             - independence means, for all i, component RandVec1_i is independent of RandVec2_i
             - if RandVec1 and RandVec2 are dependent, initialise a new random vector with desired dependency among components
         """
-        if isinstance(second_randvec, (list, np.ndarray)): # pass list[float] or np.ndarray with np.array.shape = (self.dimension,)
+        if isinstance(second_randvec, (list, np.ndarray)): # pass list or np.ndarray with np.array.shape = (self.dimension,)
+            try:
+                second_randvec: list[Decimal] = [Decimal(str(v)) for v in second_randvec]
+            except InvalidOperation:
+                """second_randvec is a list of Fraction objects"""
+                pass
             new_pspace: dict = {}
             for sample_tuple, prob in self.pspace.items():
                 new_tuple = tuple([sample_tuple[i] + second_randvec[i] for i in range(self.dimension)])
@@ -48,14 +56,16 @@ class RandVec(JointDistribution):
             - random vectors form a module over the algebra of random variables (c.f., functions on vector spaces)
             - randvar is assumed to be independent of components in self.components
         """
-        if isinstance(randvar, (int, float)):
-            sf = self.SIGFIGS
-            randvar = round(randvar, sf)
+        if isinstance(randvar, (int, float, Decimal, Fraction)):
+            try:
+                randvar: Decimal = Decimal(str(randvar))
+            except InvalidOperation:
+                """randvar is a Fraction object"""
+                pass
             new_pspace: dict = {
                 (randvar*s for s in sample): prob for sample, prob in self.pspace.items()
                 }
         else:
-            sf: int = max(self.SIGFIGS, randvar.SIGFIGS)
             new_pspace: dict = {}
             for rv_sample, rv_prob in randvar.pspace.items():
                 for sample, prob in self.pspace.items():
@@ -90,8 +100,9 @@ class RandVec(JointDistribution):
                     new_pspace[new_sample] += prob
                 except KeyError:
                     new_pspace[new_sample] = prob
-
-            return RandVar(**{'name': new_name, 'pspace': new_pspace, 'SIGFIGS': self.SIGFIGS})
+                    
+            new_name = sp.nsimplify(new_name)
+            return RandVar(**{'name': new_name, 'pspace': new_pspace})
 
         new_name = np.array([sample.name for sample in next(sample_tup for sample_tup in self.pspace.keys())])\
                     @ np.array([sample.name for sample in next(sample_tup for sample_tup in second_rvec.pspace.keys())])
@@ -104,7 +115,8 @@ class RandVec(JointDistribution):
                 except KeyError:
                     new_pspace[new_sample] = new_prob
 
-        return RandVar(**{'name': new_name, 'pspace': new_pspace, 'SIGFIGS': self.SIGFIGS})
+        new_name = sp.nsimplify(new_name)
+        return RandVar(**{'name': new_name, 'pspace': new_pspace})
     
     def sum(self):
         return self.dot(np.ones(self.dimension))
@@ -144,7 +156,6 @@ class RandVec(JointDistribution):
                     cov_mtrx[i, i+j] = secondary.E - component.E*second_component.E
                     cov_mtrx[i+j, i] = cov_mtrx[i, i+j]
 
-        cov_mtrx = np.around(cov_mtrx, self.SIGFIGS)
         if inplace == False:
             self.cov_mtrx = cov_mtrx
         else:
@@ -164,9 +175,13 @@ class RandVec(JointDistribution):
         if isinstance(predicate, str):
             return self.Prob([predicate]*self.dimension)
 
-        rsult: float = 0.0
+        rsult: Decimal = Decimal('0.0')
         for sample_tuple, prob in self.pspace.items():
             if all(eval(f"{sample_tuple[i].value}" + predicate[i]) for i in range(self.dimension)):
-                rsult += prob
+                try:
+                    rsult += prob
+                except TypeError:
+                    rsult: float = float(rsult)
+                    rsult += prob
 
-        return round(rsult, self.SIGFIGS)
+        return rsult

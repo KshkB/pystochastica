@@ -3,10 +3,10 @@ random variables and random vectors call on JointDistribution to evaluate probab
 """
 from ._sample_base import SampleBase
 from ._randvar_base import RandVarBase
+from decimal import Decimal, InvalidOperation
 import numpy as np
-class JointDistribution:
 
-    SIGFIGS: int = 8 # default numerical accuracy for probabilities
+class JointDistribution:
 
     def __new__(cls, **kwargs):
         """
@@ -42,27 +42,26 @@ class JointDistribution:
             raise IndexError("sample index mismatch, all sample names at a given index must coincide")
         
         # validation, total law of probability
-        all_probabilities: float = sum(pspace.values())
         try:
-            sf: int = kwargs['SIGFIGS']
-        except KeyError:
-            sf: int = JointDistribution.SIGFIGS
+            all_probabilities: Decimal = sum([Decimal(str(p)) for p in pspace.values()])
+        except InvalidOperation:
+            # pspace.values() are Fraction objects
+            all_probabilities: Decimal = Decimal(str(float(sum([p for p in pspace.values()]))))
 
-        all_probabilities: float = round(all_probabilities, sf)
-        if not all_probabilities == 1.0:
-            raise ValueError(f"total law of probability violated, all probabilities must sum to {1.0} but got {round(all_probabilities, sf)}")
+        if not all_probabilities == Decimal('1.0'):
+            raise ValueError(f"total law of probability violated, all probabilities must sum to {1.0} but got {all_probabilities}")
 
         return super(JointDistribution, cls).__new__(cls)
 
     def __init__(self, **kwargs) -> None:
         
-        self.pspace: dict = kwargs['pspace']
-        self.name: list = [sample.name for sample in next(s for s in self.pspace.keys())]
         try:
-            self.SIGFIGS: int = kwargs['SIGFIGS']
-        except KeyError:
-            pass 
+            self.pspace: dict = {s: Decimal(str(p)) for s, p in kwargs['pspace'].items() if Decimal(str(p)) != Decimal('0')}
+        except InvalidOperation:
+            # kwargs['pspace'].values() are Fraction objects
+            self.pspace: dict = kwargs['pspace']
 
+        self.name: list = [sample.name for sample in next(s for s in self.pspace.keys())]
         self.dimension: int = next(len(sample_tuple) for sample_tuple in self.pspace.keys())
 
     def derive_marginals(self, inplace=False) -> None:
@@ -72,7 +71,6 @@ class JointDistribution:
         Note. (X, Y, ...) args in jd are not RandVar objects; the marginals [mX, mY, ...] define dependent random variables
             - marginals mX, mY, ... are RandVarBase objects
         """
-        sf: int = self.SIGFIGS
         jdist_pspace: dict = self.pspace
         marginals: list = []
         for i in range(self.dimension):
@@ -85,7 +83,7 @@ class JointDistribution:
                 except KeyError:
                     rv_pspace[sample] = prob
 
-            marginals += [RandVarBase(**{'name': rv_name, 'pspace': rv_pspace, 'SIGFIGS': sf})]
+            marginals += [RandVarBase(**{'name': rv_name, 'pspace': rv_pspace})]
 
         if inplace == True:
             return marginals
@@ -114,7 +112,6 @@ class JointDistribution:
                 self.secondaries = secondaries
                 return
         
-        sf: int = self.SIGFIGS
         jdist_pspace: dict = self.pspace
         secondaries: list = []
         for i in range(self.dimension-1):
@@ -133,7 +130,7 @@ class JointDistribution:
                     except KeyError:
                         rvrv_pspace[sample] = prob        
 
-                secondaries += [RandVarBase(name=name, pspace=rvrv_pspace, SIGFIGS=sf)]
+                secondaries += [RandVarBase(name=name, pspace=rvrv_pspace)]
 
         if inplace == True:
             return secondaries
@@ -164,7 +161,6 @@ class JointDistribution:
 
     def __eq__(self, second_joint_dist: object) -> bool:
 
-        sf: int = max(self.SIGFIGS, second_joint_dist.SIGFIGS)
         if not set(self.name) == set(second_joint_dist):
             return False
 
@@ -172,7 +168,7 @@ class JointDistribution:
             return False
         
         for key, prob in self.pspace.items():
-            if not round(second_joint_dist[key], sf) == round(prob, sf):
+            if not second_joint_dist[key] == prob:
                 return False
             
         return True

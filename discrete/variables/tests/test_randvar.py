@@ -1,5 +1,6 @@
 from .. import RandVar
 from ...utils import rvdict_to_pspace
+from decimal import Decimal
 import sympy as sp
 
 X, Y, Z = sp.symbols('X, Y, Z')
@@ -95,7 +96,7 @@ def test_randvar_shorthand():
     rvX.calculate_expectation()
     rvX.calculate_variance()
 
-    sf: int = rvX.SIGFIGS
+    sf: int = 5
     assert round(rvX.E, sf) == round(rvX.expectation, sf)
     assert round(rvX.V, sf) == round(rvX.variance, sf)
 
@@ -106,8 +107,8 @@ def test_randvar_prob():
     rvZ = RandVar(name=Z, pspace=rvdict_to_pspace(Z_dict))
 
     U = rvX + rvY + rvZ 
-    sf = U.SIGFIGS
+    sf = 5
     print(f"{U.Prob('<= 1') = :.{sf}f}")
 
-    assert isinstance(U.Prob('<= 1'), float)
+    assert isinstance(U.Prob('<= 1'), (float, Decimal))
 

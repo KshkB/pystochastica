@@ -2,6 +2,8 @@ from ...samples import Sample
 from ...variables import RandVar
 from ...utils import generate_jdist_random, generate_jdist
 from .. import RandVec
+from decimal import Decimal
+from fractions import Fraction
 import sympy as sp
 import numpy as np
 
@@ -48,7 +50,7 @@ def test_rvec_moments():
     X1_X2_rvec.calculate_expectation()
     X1_X2_rvec.calculate_variance()
     print(X1_X2_rvec.cov_mtrx)
-    sf = X1_X2_rvec.SIGFIGS
+    sf = 5
     expectation_vec = [varX1.expectation, varX2.expectation]
     expectation_vec_shorthand = X1_X2_rvec.E
     assert all(
@@ -74,7 +76,7 @@ def test_randvec_arithmetic():
 
     rvec_sum = Xrvec + Yrvec + [1.5, 1.5]
     rvec_sum.calculate_expectation()
-    sf: int = rvec_sum.SIGFIGS
+    sf: int = 5
     assert rvec_sum.dimension == 2
     assert all(round(rvec_sum.expectation[i], sf) == round(X_expectation[i] + Y_expectation[i] + 1.5, sf) for i in range(rvec_sum.dimension))
 
@@ -88,7 +90,7 @@ def test_randvec_dot():
     rvec_sum.calculate_expectation()
     print(rvec_sum.expectation)
 
-    sf: int = rvec.SIGFIGS
+    sf: int = 5
     assert isinstance(rvar, RandVar)
     assert isinstance(rvec_sum, RandVar)
     assert round(rvar.expectation, sf) == round(rvec_sum.expectation, sf)
@@ -110,7 +112,7 @@ def test_randvec_matmul():
     rvec_sum.calculate_expectation()
     rvec_sum.calculate_variance()
 
-    sf: int = rvec.SIGFIGS
+    sf: int = 5
     assert isinstance(rvec3, RandVar)
     assert rvec3 == rrvec3
     assert round(rvec_matmul_sum.expectation, sf) == round(rvec_sum.expectation, sf)
@@ -131,7 +133,7 @@ def test_depsum():
 
 def test_randvec_jd_randjd():
     random_randvec = RandVec(pspace=generate_jdist_random(dimension=5))
-    sf = random_randvec.SIGFIGS
+    sf = 5
     print(np.around(random_randvec.V, sf))
     assert random_randvec.V.shape == (random_randvec.dimension, random_randvec.dimension)
     assert all(random_randvec.V[i, i] > 0 for i in range(random_randvec.dimension)) # Cov(X, Y) < 0 only if X != Y; Cov(X, X) = Var(X) >= 0
@@ -141,5 +143,5 @@ def test_randvec_prob():
     rvec = RandVec(pspace=jd_X1_X2_dict)
     print(rvec.Prob('<=1.0'))
     print(rvec.Prob(['<=1.0', '==1.0']))
-    assert isinstance(rvec.Prob('<=1.0'), float)
+    assert isinstance(rvec.Prob('<=1.0'), (float, Decimal, Fraction))
     assert rvec.Prob('<=1.0') >= rvec.Prob(['<=1.0', '>=1.0'])

@@ -12,7 +12,10 @@ from ..core import RandVarBase
 from ..samples import Sample
 from ..simulations import RandVarSimulator
 from ..utils import convolve_dicts, dict_mul
+from decimal import Decimal, InvalidOperation
+from fractions import Fraction
 import numpy as np
+import sympy as sp
 
 class RandVar(RandVarBase):
 
@@ -21,50 +24,52 @@ class RandVar(RandVarBase):
 
 	def __add__(self, second_rv):
 		"""assumes self and second_rv are independent, use RandVec for dependent variables"""
-		if isinstance(second_rv, (int, float)):
-			sf: int = self.SIGFIGS
-			second_rv = round(second_rv, sf)
-
+		if isinstance(second_rv, (int, float, Decimal, Fraction)):
+			try:
+				second_rv = Decimal(str(second_rv))
+			except InvalidOperation:
+				"""second_rv is a Fraction object"""
+				pass
 			new_name = self.name + second_rv
 			new_pspace: dict = {sample + second_rv: prob for sample, prob in self.pspace.items()}
 		else:
-			sf: int = max(self.SIGFIGS, second_rv.SIGFIGS)
-			
 			new_name = self.name + second_rv.name 
 			if new_name == 0:
-				raise ValueError("use RandVec data types to subract self from self")
+				raise ValueError("use the RandVec data type to subract self from self")
 			
 			new_pspace_dict: dict = convolve_dicts(
 					{sample.value: prob for sample, prob in self.pspace.items()}, 
 					{sample.value: prob for sample, prob in second_rv.pspace.items()}
 				)
 			new_pspace: dict = {
-					Sample(**{'name': new_name, 'value': round(value, sf)}): prob for value, prob in new_pspace_dict.items()
+					Sample(**{'name': new_name, 'value': value}): prob for value, prob in new_pspace_dict.items()
 				}
-		return RandVar(**{'name': new_name, 'pspace': new_pspace, 'SIGFIGS': sf})
+		new_name = sp.nsimplify(new_name)
+		return RandVar(**{'name': new_name, 'pspace': new_pspace})
 	
 	def __radd__(self, second_rv):
 		return self.__add__(second_rv)
 	
 	def __mul__(self, second_rv):
 		"""assumes self and second_rv are independent, use RandVec for dependent variables"""
-		if isinstance(second_rv, (int, float)):
-			sf: int = self.SIGFIGS
-			second_rv = round(second_rv, sf)
-
-			new_name = second_rv*self.name
-			new_pspace = {second_rv*sample: prob for sample, prob in self.pspace.items()}
+		if isinstance(second_rv, (int, float, Decimal, Fraction)):
+			try:
+				second_rv = Decimal(str(second_rv))
+			except InvalidOperation:
+				"""second_rv is a Fraction object"""
+				pass
+			new_name = second_rv * self.name
+			new_pspace = {second_rv * sample: prob for sample, prob in self.pspace.items()}
 		else:
-			sf: int = max(self.SIGFIGS, second_rv.SIGFIGS)
-
 			new_name = self.name*second_rv.name
 			new_pspace_dict: dict = dict_mul(
 					{sample.value: prob for sample, prob in self.pspace.items()},
 					{sample.value: prob for sample, prob in second_rv.pspace.items()}
 				)
 			new_pspace: dict = {
-					Sample(**{'name': new_name, 'value': round(value, sf)}): prob for value, prob in new_pspace_dict.items()
+					Sample(**{'name': new_name, 'value': value}): prob for value, prob in new_pspace_dict.items()
 				}
+		new_name = sp.nsimplify(new_name)
 		return RandVar(**{'name': new_name, 'pspace': new_pspace})
 	
 	def __rmul__(self, second_rv):
@@ -97,10 +102,15 @@ class RandVar(RandVarBase):
 
 	def calculate_expectation(self, inplace=False) -> None:
 		
-		expectation: float = 0.0
+		expectation: Decimal = Decimal('0.0')
 		for sample, prob in self.pspace.items():
-			expectation += sample.value*prob
+			try:
+				expectation += sample.value * prob
+			except TypeError:
+				expectation: float = float(expectation)
+				expectation += float(sample.value) * prob
 
+		expectation: float = float(expectation) # store as float object, not Decimal
 		if inplace == True:
 			return expectation
 		else:
@@ -112,11 +122,16 @@ class RandVar(RandVarBase):
 
 	def calculate_variance(self, inplace=False) -> None:
 
-		expectation: float = self.E
-		square_expectation: float = 0.0
+		square_expectation: Decimal = Decimal('0.0')
 		for sample, prob in self.pspace.items():
-			square_expectation += (sample.value**2)*prob 
-		
+			try:
+				square_expectation += (sample.value**2) * prob
+			except TypeError:
+				square_expectation: float = float(square_expectation)
+				square_expectation += (float(sample.value)**2) * prob
+
+		square_expectation: float = float(square_expectation)
+		expectation: float = self.E
 		if inplace==True: 
 			# inplace is True, do not store output
 			return square_expectation - expectation**2
@@ -129,13 +144,18 @@ class RandVar(RandVarBase):
 		return self.calculate_variance(inplace=True)
 	
 	def Prob(self, predicate: str) -> float:
-		rsult: float = 0.0
+		rsult: Decimal = Decimal('0.0')
 		for sample, prob in self.pspace.items():
 			stmnt = f"{sample.value}" + predicate
 			if eval(stmnt):
-				rsult += prob 
+				try:
+					rsult += prob
+				except TypeError:
+					rsult: float = float(rsult)
+					rsult += prob
 			else:
 				pass 
+
 		return rsult
 
 	def generate(self, iterations: int) -> np.ndarray:
