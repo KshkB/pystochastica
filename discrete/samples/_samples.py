@@ -1,20 +1,29 @@
-"""
-implementation of calculi for Sample objects as derived from SampleBase 
-calculi includes:
-	- addition, subtraction, multiplication, exponentiation
-	- ints or floats are converted to Decimal in order to ensure arithmetical accuracy
-	- Fraction objects are kept as raw
-Note:
-	- Decimal + Fraction results in TypeError, this will NOT be rectified in backend 
-	- user will need to manage these issues directly in scripting
-"""
 from ..core import SampleBase
 from decimal import Decimal, InvalidOperation
 from fractions import Fraction
 import sympy as sp
 
 class Sample(SampleBase):
+	"""
 
+	Summary
+	-------
+	``Sample`` is a subclass of the ``SampleBase`` class. The samples of 
+	random variables are instances of ``Sample``. Any ``int`` and ``float`` 
+	objects are converted to ``Decimal`` to ensure numerical accuracy. Arithmetic 
+	coded for ``Sample`` objects are
+
+	- addition
+	- subtraction
+	- multiplication
+	- exponentiation
+	
+	Note
+	----
+	``Decimal`` + ``Fraction`` results in ``TypeError``. This error is *not* raised 
+	so users will need to manage this error.
+
+	"""
 	def __init__(self, **kwargs) -> None:
 		super().__init__(**kwargs)
 
@@ -24,7 +33,7 @@ class Sample(SampleBase):
 			try:
 				second_sample = Decimal(str(second_sample))
 			except InvalidOperation:
-				"""second_sample is a Fraction object"""
+				# second_sample is a Fraction object
 				pass
 			new_name = self.name + second_sample
 			new_value = self.value + second_sample
@@ -44,7 +53,7 @@ class Sample(SampleBase):
 			try:
 				second_sample = Decimal(str(second_sample))
 			except InvalidOperation:
-				"""second_sample is a Fractio object"""
+				# second_sample is a Fraction object
 				pass
 			new_name = self.name * second_sample
 			new_value = self.value * second_sample

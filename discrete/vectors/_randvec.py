@@ -7,10 +7,36 @@ import numpy as np
 import sympy as sp
 
 def randvar_base_descent(*randvarbases) -> list[RandVar]:
+    """Base conversion
+    
+    Summary
+    -------
+    Convert a list of ``RandVarBase`` objects to ``RandVar`` objects. This allows for 
+    utilising the arithmetic coded into the ``RandVar`` class
+    
+    """
     return [RandVar(name=rv.name, pspace=rv.pspace) for rv in randvarbases]
 
 class RandVec(JointDistribution):
+    """
+    
+    Summary
+    -------
+    To model simultaneous and dependent random variables, use the ``RandVec`` class.
+    The probability law for random vectors are joint distributions. In contrast to 
+    stochastic processes, random vectors represent simultaneity of events. 
 
+    Example
+    -------
+    For a random variable X, see that -X is dependent on X. If X is initialised as 
+    a ``RandVar`` object, then we will typically find
+
+    >>> bool((X-X).V == 0)
+    False
+
+    In order to correctly calculate X - X, we need to sum the ``RandVec`` object [X, -X]
+
+    """
     def __init__(self, **joint_pspace: dict) -> None:
         super().__init__(**joint_pspace)
 
@@ -23,10 +49,17 @@ class RandVec(JointDistribution):
         self.secondaries: np.ndarray = np.array(randvar_base_descent(*self.secondaries))
 
     def __add__(self, second_randvec):
-        """
-        WARNING: RandVec1 + RandVec2 assumes RandVec1 and RandVec2 are independent random vectors (c.f., RandVar.__add__)
-            - independence means, for all i, component RandVec1_i is independent of RandVec2_i
-            - if RandVec1 and RandVec2 are dependent, initialise a new random vector with desired dependency among components
+        """Addition of ``RandVec`` objects
+
+        Remarks
+        -------
+
+        The ``RandVec`` objects ``rvec1`` and ``rvec2`` are assumed to be *independent* as
+        as random vectors. This means, for each component i, ``rvec1_i`` and ``rvec2_i`` are
+        independent.
+
+        - if ``rvec1`` and ``rvec2`` are dependent, initialise a new random vector with dependency in the joint distribution
+
         """
         if isinstance(second_randvec, (list, np.ndarray)): # pass list or np.ndarray with np.array.shape = (self.dimension,)
             try:
@@ -51,16 +84,24 @@ class RandVec(JointDistribution):
         return self.__add__(second_randvec)
 
     def __mul__(self, randvar):
-        """
-        multiply by (int, float) or RandVar object
-            - random vectors form a module over the algebra of random variables (c.f., functions on vector spaces)
-            - randvar is assumed to be independent of components in self.components
+        """Module structure
+
+        Remarks
+        -------
+        Random vectors can be multiplied by scalars, random variables and functions thereof.
+        If multiplying by random variables, note that they are assumed to be independent of 
+        the components of the random vector. Current functionality in this method is 
+        multiplication by:
+
+        - ``int`` or ``float`` objects
+        - ``RandVar`` objects
+
         """
         if isinstance(randvar, (int, float, Decimal, Fraction)):
             try:
                 randvar: Decimal = Decimal(str(randvar))
             except InvalidOperation:
-                """randvar is a Fraction object"""
+                # randvar is a Fraction object
                 pass
             new_pspace: dict = {
                 (randvar*s for s in sample): prob for sample, prob in self.pspace.items()
@@ -88,8 +129,17 @@ class RandVec(JointDistribution):
 
     def dot(self, second_rvec):
         """
-        returns RandVar object
-            - this is the component sum of dependent random variables (marginals)
+        Parameters
+        ----------
+        second_rvec : RandVec
+            ``RandVec`` object to dot with self. Note, ``second_rvec`` is assumed to be
+            independent of self
+
+        Returns
+        -------
+        result : RandVar
+            The dot product of two random vectors is a random variable
+        
         """
         new_pspace: dict = {}
         if isinstance(second_rvec, (list, np.ndarray)):
@@ -119,6 +169,7 @@ class RandVec(JointDistribution):
         return RandVar(**{'name': new_name, 'pspace': new_pspace})
     
     def sum(self):
+        """return the component sum of the random vector as a ``RandVar`` object (random variable)"""
         return self.dot(np.ones(self.dimension))
 
     def __matmul__(self, second_rvec):
@@ -167,10 +218,28 @@ class RandVec(JointDistribution):
 
     def Prob(self, predicate: list[str]) -> float:
         """
-        predicate ['<= x', '>= y', '== z', ...], calculates joint probability Pr(X <= x, Y => y, Z == z, ...)
-            - ensure len(predicate) == self.dimension or predicate is str
-            - if e.g., predicate = '<= 1.0', calculates joint probability Pr(X <= 1.0, Y => 1.0, Z == 1.0, ...)
-            - arg predicate = ['== True']*self.dimension returns 1.0
+
+        Parameters
+        ----------
+        predicate : str, list[str]
+            the event whose probability is to be calculated (c.f., ``RandVar.Prov``)
+
+        Returns
+        -------
+        probability : float
+            the probability of the event passed. For the random vector [X, Y, Z, ...]
+            and event ['<= x', '== y', '> z', ...], ``probability`` is the joint probability 
+            Pr(X <= x, Y == y, Z > z, ...)
+
+        Remarks
+        -------
+        
+        Since random vectors represent simultaneity of events for the component random 
+        variables, a list of events equal to the dimension of the random vector need to be passed (i.e., 
+        ``len(predicate) == self.dimension``). If only a single event is passed, it is assumed to be 
+        simultaneous across all random component random variables, e.g., passing '<= 1.0' returns the 
+        probability Pr(X <= 1.0, Y <= 1.0, Z <= 1.0, ...)
+        
         """
         if isinstance(predicate, str):
             return self.Prob([predicate]*self.dimension)

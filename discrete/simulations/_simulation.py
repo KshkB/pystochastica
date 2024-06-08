@@ -2,16 +2,35 @@ from ..core import RandVarBase
 import matplotlib.pyplot as plt
 
 class RandVarSimulator:
+    """
+    
+    Summary
+    -------
+    Simulator for random variables as initialised by the ``RandVar`` class.
+    For any number of random variables, ``RandVarSimulator`` will plot
 
+    - their pdfs
+    - their cdfs
+
+    """
     FIGSIZE: tuple = (15, 9) # default figsize
     ITERATIONS: int = 1000 # default iterations
 
     def __init__(self, **kwargs) -> None:
-        """initialise defaults unless config arguments otherwise passed"""
+        """Constructor method
+        
+        Parameters
+        ----------
+        iterations : int, optional
+            custom number of iterations to simulate, default is 1000
 
+        FIGSIZE : tuple, optional
+            custom figure size (resolution), default is (15, 9)
+
+        """
         # get kwargs for configuration if any passed
         try:
-            self.ITERATIONS = kwargs['iterations']
+            self.ITERATIONS: int = kwargs['iterations']
         except KeyError:
             pass 
 
@@ -21,6 +40,40 @@ class RandVarSimulator:
             pass
 
     def plot(self, *randvars, **kwargs) -> None:
+        """
+        
+        Parameters
+        ----------
+        randvars : list[RandVar]
+            a list of ``RandVar`` objects
+
+        title : str
+            the title keyword for the plot
+
+        plot_title : str
+            the title keyword for each subplot
+
+        xlabel : str
+            label for x-axis
+
+        ylabel : str
+            label for y-axis
+
+        plt_data : dict, keys x, y
+            the data set to plot (x- and y-values)
+
+        plt_type : str
+            the type of plot (e.g., line, bar)
+        
+        plt_kwargs : dict
+            extra parameters to pass to the ``matplotlib.pyplot.plot`` method, e.g., linestyle, color etc.
+        
+        Raises
+        ------
+        TypeError
+            if not all elements in randvars are ``RandVar`` objects
+        
+        """
         if not all(isinstance(randvar, RandVarBase) for randvar in randvars):
             raise TypeError(f"not all arguments passed are {RandVarBase.__name__} objects")
         
@@ -61,6 +114,14 @@ class RandVarSimulator:
         plt.show()
 
     def pdfs(self, *randvars):
+        """
+        
+        Parameters
+        ----------
+        randvars : list[RandVar]
+            a list of ``RandVar`` objects    
+        
+        """
         # generate plot data for pdf plots
         plt_data: dict = {}
         for randvar in randvars:
@@ -88,6 +149,14 @@ class RandVarSimulator:
             })
 
     def cdfs(self, *randvars):
+        """
+        
+        Parameters
+        ----------
+        randvars : list[RandVar]
+            a list of ``RandVar`` objects    
+        
+        """
         # generate plot data for cdf plots
         plt_data: dict = {}
         for randvar in randvars:

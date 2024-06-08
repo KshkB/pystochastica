@@ -7,13 +7,40 @@ import numpy as np
 import sympy as sp
 
 def list_product(array: list):
+    """Big prod
+
+    Parameters
+    ----------
+    array : list
+        list of common objects with a ``__mul__`` method
+
+    Returns
+    -------
+    result : object
+        return the product of all elements in the list
+        
+    """
     return reduce(lambda x, y: x*y, array)
 
 def generate_jdist(*marginals) -> dict:
-    """
-    from list of marginals, passed as list[RandVar], generate kwargs for joint distribution
-        - joint distribution generated has marginals as its marginal distributions
-        - Note, this joint distribution assumes marginals are independent
+    """The product distribution from a list of random variables
+
+    Summary
+    -------
+    From a list of random variables (``RandVar`` objects), generate the 
+    product distribution with given random variables as marginals (i.e., 
+    the joint distribution for a list of independent random variables)
+
+    Parameters
+    ----------
+    marginals : list[RandVar]
+        a list of random variables, initialised as ``RandVar`` objects
+
+    Returns
+    -------
+    result : dict
+        the product distribution
+
     """
     sample_prob_pairs_list = []
     for mg_rv in marginals:
@@ -40,13 +67,36 @@ def generate_jdist_random(\
         MIN: int = 1, 
         MAX: int = 100
         ) -> dict:
-    """
-    generate kwargs for dimension-dimensional joint distribution 
-        - sample names are (X_0, X_1, ... X_{dimension-1}), default = 3
-        - sample size range = number of samples for each random variable, SAMPLE_SIZE_RANGE, default = (1, 5)
-        - sample values randomised between (SAMPLES_MIN, SAMPLES_MAX), default = (-50, 50)
-        - joint probabilities randomised, generator seeded from (MIN, MAX), default range = (1, 100)
-    returns a JointDistribution object
+    """Random joint distribution
+
+    Summary
+    -------
+    Generate parameters for a joint distribution at random.
+    Marginals of this distribution are almost certainly dependent
+    as random variables
+
+    Parameters
+    ----------
+    dimension : int, optional
+        the dimension of the random vector with this joint distribution, default is 3
+
+    SAMPLE_SIZE_RANGE : tuple, optional
+        the range of sample sizes for each marginal, default is (2, 6)
+
+    SAMPLE_VALUES : tuple, optional
+        the range of values each sample can take for each marginal, default is (-50, 50)
+
+    MIN : int, optional
+        required for generating probabilities
+    
+    MAX : int, optional
+        required for generating probabilities
+
+    Returns 
+    -------
+    result : dict
+        the probability space for initialising a ``JointDistribution`` of ``RandVec`` object
+    
     """
     sample_names: list = [sp.Symbol(f"X_{i}") for i in range(dimension)]
     samples: dict = {sample_name: [] for sample_name in sample_names}

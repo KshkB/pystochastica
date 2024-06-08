@@ -1,5 +1,8 @@
 # ignore the following files when pushing to Github
 
+# Virtualenv
+venv/
+
 # Regular Python bytecode file
 *.pyc
 __pycache__/
@@ -11,3 +14,7 @@ __pycache__/
 dist/
 build/
 *.egg-info/
+
+# Built doc files (cd doc; make html)
+doc/_build/
+doc/sphinx/

@@ -9,7 +9,7 @@ def test_rwalk():
 
 @pytest.fixture(scope='function') # comment out decorator to show plot
 def test_rwalk_plot():
-    rw = RandWalk(time_steps=18)
+    rw = RandWalk(time_steps=100)
     rw.plt()
     assert True
 

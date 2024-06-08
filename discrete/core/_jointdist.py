@@ -1,22 +1,55 @@
-"""
-random variables and random vectors call on JointDistribution to evaluate probabilities
-"""
 from ._sample_base import SampleBase
 from ._randvar_base import RandVarBase
 from decimal import Decimal, InvalidOperation
 import numpy as np
 
 class JointDistribution:
+    """
 
+    Summary
+    -------
+    The distribution for random vectors are joint distributions. 
+    Dependent random variables can also be modelled by joint distributions, 
+    whence the dependent variables follow the marginal distributions of the joint
+    distribution.
+
+    Example
+    -------
+    X : random variable
+        - X is dependent on X, whereby X - X = 0
+        - if X is initialised as a randvar object, we would find X - X != 0
+        - to get X - X == 0, form as RandVec operation [X, -X]@[1, 1] (c.f., discrete.vectors.RandVec)
+
+    """
     def __new__(cls, **kwargs):
-        """
-        pass dict {tuple[Sample]: float} 
-            - e.g., {(sample1, sample2, ...): prob}
-        
-        Note. Random variables are marginals as derived from the joint distribution
-        If random variables are passed individually, it means they are independent
-            - independent variables are marginals of joint distributions if the joint distribution is the product distribution
-            - i.e., if P(X, Y) = P(X)P(Y), which just means (X, Y) are independent
+        """Argument validation before calling the constructor
+
+        Parameters
+        ----------
+        pspace : dict type
+            The joint probability distribution, constists of key-value pairs where:
+
+            - the keys are ``tuple[SampleBase]`` type objects
+            - the values are probabilities
+
+        Raises
+        ------
+        TypeError
+            if not all samples in pspace.keys() are SampleBase type objects
+
+        ValueError
+            if length of each tuple in pspace.keys() are not all equal
+
+            if all probabilties do not sum to 1.0 (total law of probability)
+
+        IndexError
+            if name of all SampleBase objects at given index do not coincide
+
+        Returns
+        -------
+        joint distribution : JointDistribution
+            base object for the random vectors class (c.f., RandVec)
+
         """
         pspace: dict = kwargs['pspace']
         
@@ -65,11 +98,24 @@ class JointDistribution:
         self.dimension: int = next(len(sample_tuple) for sample_tuple in self.pspace.keys())
 
     def derive_marginals(self, inplace=False) -> None:
-        """
-        generate marginal distributions from joint distributions as RandVar objects, store marginals as list[RandVar]
-            - i.e., jd(X, Y, ...) -> [mX, mY, ...]
-        Note. (X, Y, ...) args in jd are not RandVar objects; the marginals [mX, mY, ...] define dependent random variables
-            - marginals mX, mY, ... are RandVarBase objects
+        """Generate marginal distributions from the joint distribution
+
+        Example
+        -------
+        jd(X, Y, ...) : JointDistribution
+            generate list of marginal distributions, [mX, mY, ...]
+            
+            - data of type ``list[RandVarBase]``
+            - arguments of jd(X, Y, ...) are *not* RandVarBase objects
+
+        Comment
+        -------
+        Random variables are marginals as derived from the joint distribution
+        If random variables are passed individually to the constructor, they are independent
+
+        - the prodict distribution is a joint distribution with independent marginals
+        - i.e., if P(X, Y) = P(X)P(Y), then (X, Y) are independent
+
         """
         jdist_pspace: dict = self.pspace
         marginals: list = []
@@ -95,15 +141,20 @@ class JointDistribution:
         return self.derive_marginals(inplace=True)
 
     def derive_secondaries(self, inplace=False) -> None:
-        """
-        generate secondaries from joint distribution
-            - analogue of product XY for independent random variables X, Y
-            - store or return list[RandVarBase] objects
-        Note. Cannot simply take product mXmY for marginals mX, mY 
-            - mX, mY are assumed to be independent if extracted individually
+        """Generate secondaries from joint distribution
+
+        Example
+        -------
+        jd(X, Y, ...) : JointDistribution
+            generate list[RandVarBase] object of secondaries
+
+            - analogue of product distribution XY for X, Y independent
+            - is generally *not* given by the product of marginals mXmY
+            - marginals [mX, mY, ...] are assumed to be independent as ``RandVarBase`` objects
+
         """
         if self.dimension == 1:
-            """return RandVarBase initialised for RandVar object"""
+            # return RandVarBase initialised for RandVar object
             secondary = RandVarBase(name=(next(sample.name for sample in self.pspace.keys())[0]), pspace=self.pspace)
             secondaries = [secondary]
             if inplace == True:
@@ -155,7 +206,7 @@ class JointDistribution:
         return string
     
     def to_tuple(self) -> tuple:
-        """self.pspace rendered as hashable tuple"""
+        """cast pspace to a tuple object, allows for hashing the pspace"""
         pspace: dict = self.pspace
         return tuple([(s, p) for s, p in pspace.items()])
 

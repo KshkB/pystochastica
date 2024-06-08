@@ -5,7 +5,30 @@ import numpy as np
 class MeanVariance:
 
     def __new__(cls, rvec: RandVec, target: float):
+        """Argument validation before calling the constructor method
         
+        Parameters
+        ----------
+        rvec : RandVec
+            the random vector to be optimised when summed (i.e., the portfolio)
+        
+        target : float
+            the expected value of the optimised random vector sum (i.e., the portfolio returns)
+
+            
+        Raises
+        ------
+        TypeError
+            if rvec is not a ``RandVec`` type object
+
+            if target is not an ``int`` of ``float`` type object
+
+        Returns
+        -------
+        instance : MeanVariance
+            mean variance optimisation
+        
+        """
         if not isinstance(rvec, RandVec):
             raise TypeError(f"{rvec} is not of type {RandVec.__name__}")
         
@@ -15,7 +38,7 @@ class MeanVariance:
         return super(MeanVariance, cls).__new__(cls)
 
     def __init__(self, rvec: RandVec, target: float) -> None:
-        
+        """Constructor method"""
         expectation_vect: np.ndarray = rvec.E
         cov_mtrx: np.ndarray = rvec.V 
 
@@ -27,7 +50,23 @@ class MeanVariance:
         self.start: list = np.repeat([1/rvec.dimension], rvec.dimension)
 
     def optimise(self, **kwargs):
+        """Optimiser
+        
+        Summary
+        -------
+        The objective of the optimiser is to solve for the random variable 
+        having the lowest variance and fixed expectation, given by the 
+        ``target`` parameter
 
+        - weights defining the random variable is stored in memory as a class attribute
+
+        
+        Parameters
+        ----------
+        method : str, optional
+            the algorithm used by ``scipy.optimize.minimize`` to implement optimisation, default is SLSQP
+
+        """
         objective_func: function = self.objective_func
         constraint_1: dict = {'type': 'eq', 'fun': self.constraint_1}
         constraint_2: dict = {'type': 'eq', 'fun': self.constraint_2}
