@@ -1,7 +1,8 @@
 # ignore the following files when pushing to Github
 
-# Virtualenv
+# Virtualenvs
 venv/
+.vpystocastica
 
 # Regular Python bytecode file
 *.pyc

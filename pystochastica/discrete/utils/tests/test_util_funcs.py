@@ -47,3 +47,8 @@ def test_rv_to_sample_to_rvdictinit():
     sf = 8
     assert round(sum(X_dictinit.values()), sf) == 1
 
+def test_rv_to_init():
+    raw_dict = {'name': 'X', 'pspace': {'-1': 0.5, '1': 0.5}}
+    initted = rvdict_to_init(raw_dict)
+    assert isinstance(initted['name'], sp.Expr)
+    assert all(isinstance(sample, Sample) for sample in initted['pspace'].keys())

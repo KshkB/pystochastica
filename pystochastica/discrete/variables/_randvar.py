@@ -256,7 +256,7 @@ class RandVar(RandVarBase):
 		
 		Summary
 		-------
-		The plot x --> (x, self.Prob('<= x'))
+		The plot x -> (x, self.Prob('<= x'))
 		
 		"""
 		rv_sim = RandVarSimulator(**kwargs)

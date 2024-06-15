@@ -27,6 +27,9 @@ class RandVarSimulator:
         FIGSIZE : tuple, optional
             custom figure size (resolution), default is (15, 9)
 
+        plt_kwargs : dict, optional
+            custom parameters to pass to the .plot() method, e.g., color, width size, xticks rotation etc.
+
         """
         # get kwargs for configuration if any passed
         try:
@@ -39,8 +42,18 @@ class RandVarSimulator:
         except KeyError:
             pass
 
-    def plot(self, *randvars, **kwargs) -> None:
-        """
+        try:
+            self.plt_kwargs: dict = kwargs['plt_kwargs']
+        except KeyError:
+            pass
+
+        try:
+            self.plt_methods: dict = kwargs['plt_methods']
+        except KeyError:
+            pass
+
+    def _plot(self, *randvars, **kwargs) -> None: # _plot since this method should not be called directly outside the RandVarSimulator class
+        """RandVarSimulator's core plot method
         
         Parameters
         ----------
@@ -77,19 +90,19 @@ class RandVarSimulator:
         if not all(isinstance(randvar, RandVarBase) for randvar in randvars):
             raise TypeError(f"not all arguments passed are {RandVarBase.__name__} objects")
         
-        iterations: int = self.ITERATIONS
         ncols: int = 1 if len(randvars) == 1 else 2
         nrows: int = sum(divmod(len(randvars), 2))
         fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=self.FIGSIZE, squeeze=False)
 
         # get data from kwargs
-        title: str = kwargs['title'] + f" after {iterations = }"
+        title: str = kwargs['title']
         plot_title: str = kwargs['plot_title']
         xlabel: str = kwargs['xlabel']
         ylabel: str = kwargs['ylabel']
         plt_data: dict = kwargs['plt_data']
         plt_type: str = kwargs['plt_type']
         plt_kwargs: dict = kwargs['plt_kwargs']
+        plt_methods: dict = kwargs['plt_methods']
 
         # generate subplots
         fig.suptitle(f"{title}")
@@ -106,6 +119,12 @@ class RandVarSimulator:
                     axs[i, j].set_xlabel(f"{xlabel}")
                     axs[i, j].set_xticks(x)
                     axs[i, j].set_ylabel(f"{ylabel}")
+                    for method, value in plt_methods.items():
+                        if method == 'set_xticklabels':
+                            labels = axs[i, j].get_xticklabels()
+                            getattr(axs[i, j], method)(labels, **value) # e.g., {'set_xticks': {'rotation': 45, 'ha': 'right'}}
+                        else:
+                            getattr(axs[i, j], method)(**value) 
                     getattr(axs[i, j], f'{plt_type}')(x, y, **plt_kwargs)
                 except IndexError:
                     axs[i, j].axis("off")
@@ -135,17 +154,28 @@ class RandVarSimulator:
             plt_data[randvar]['x'] = list(rv_outcomes.keys())
             plt_data[randvar]['y'] = list(rv_outcomes.values())
             plt_type: str = 'bar'
-            plt_kwargs: dict = {'width': 0.95}
 
-        # return self.plot()
-        self.plot(*randvars, **{
+        # optional parameters for decorating the plot, e.g., color, xtick rotation etc.
+        try:
+            plt_kwargs: dict = self.plt_kwargs
+        except AttributeError:
+            plt_kwargs: dict = {'width': 0.95} # default kwargs to pass
+
+        try:
+            plt_methods: dict = self.plt_methods
+        except AttributeError:
+            plt_methods: dict = {}
+
+        iterations: int = self.ITERATIONS
+        self._plot(*randvars, **{
             'title': f"Probability distributions for {', '.join([f'{rv.name}' for rv in randvars])}",
-            'plot_title': 'Probability distribution',
+            'plot_title': f'Probability distribution(s) after {iterations = }',
             'xlabel': 'outcomes',
             'ylabel': 'frequency',
             'plt_data': plt_data,
             'plt_type': plt_type,
-            'plt_kwargs': plt_kwargs
+            'plt_kwargs': plt_kwargs,
+            'plt_methods': plt_methods
             })
 
     def cdfs(self, *randvars):
@@ -166,16 +196,27 @@ class RandVarSimulator:
             plt_data[randvar]['x'] = x
             plt_data[randvar]['y'] = y 
             plt_type: str = 'plot'
-            plt_kwargs: dict = {'c': 'r'}
 
-        self.plot(*randvars, **{
+        # optional parameters for decorating the plot, e.g., color, xtick rotation etc.
+        try:
+            plt_kwargs: dict = self.plt_kwargs
+        except AttributeError:
+            plt_kwargs: dict = {'c': 'r'} # default kwargs
+            
+        try:
+            plt_methods: dict = self.plt_methods
+        except AttributeError:
+            plt_methods: dict = {}
+
+        self._plot(*randvars, **{
             'title': f"Cumulative distribution for {', '.join([f'{rv.name}' for rv in randvars])}",
-            'plot_title': 'Cumulative distribution',
+            'plot_title': 'Cumulative distribution(s)',
             'xlabel': 'outcomes',
             'ylabel': 'probability',
             'plt_data': plt_data,
             'plt_type': plt_type,
-            'plt_kwargs': plt_kwargs
+            'plt_kwargs': plt_kwargs,
+            'plt_methods': plt_methods
             })
 
 
