@@ -8,7 +8,7 @@ and vectors.
 
 ## Installation
 
-The `pystochastica` library is hosted at `PyPi`, see [here](https://pypi...). Run the following command to install it locally.
+The `pystochastica` library is hosted at `PyPi`, see [here](https://pypi.org/project/pystochastica/). Run the following command to install it locally.
 
     $ pip install pystochastica
 
@@ -20,12 +20,12 @@ Run the following code from command-line to find the current version number of t
 
 See jupyter notebooks, hosted at the following links, for guides on using `PyStochastica`.
 
-- [Random variables tutorial - initialisation]() 
-- [Random variables tutorial - forming combinations]()
-- [Random vectors tutorial - initialisation]()
-- [Random vectors tutorial - linear combinations]()
-- [Discrete stochastic processes]()
-- [Optimisers]()
+- [Random variables tutorial - initialisation](https://nbviewer.org/github/KshkB/pystochastica/blob/main/tutorials/random_variables_init.ipynb) 
+- [Random variables tutorial - forming combinations](https://nbviewer.org/github/KshkB/pystochastica/blob/main/tutorials/random_variables_comb.ipynb)
+- [Random vectors tutorial - initialisation](https://nbviewer.org/github/KshkB/pystochastica/blob/main/tutorials/random_vectors_init.ipynb)
+- [Random vectors tutorial - linear combinations](https://nbviewer.org/github/KshkB/pystochastica/blob/main/tutorials/random_vectors_combinations.ipynb)
+- [Discrete stochastic processes](https://nbviewer.org/github/KshkB/pystochastica/blob/main/tutorials/dsps.ipynb)
+- [Optimisers](https://nbviewer.org/github/KshkB/pystochastica/blob/main/tutorials/optimisers.ipynb)
 
 ## Version numbering convention
 
