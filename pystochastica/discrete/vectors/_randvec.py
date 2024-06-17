@@ -1,10 +1,32 @@
 from ..core import JointDistribution
 from ..variables import RandVar
+from ..samples import Sample
 from ..utils import generate_jdist
 from decimal import Decimal, InvalidOperation
 from fractions import Fraction
 import numpy as np
 import sympy as sp
+
+def sample_base_descent(*samplebases) -> tuple[Sample]:
+    """Base conversion
+
+    Summary
+    -------
+    Convert a list of ``SampleBase`` objects to ``Sample`` objects. This 
+    allows for utilising the arithmentic encoded into the ``Sample`` class
+
+    Parameters
+    ----------
+    samplebases : list[SampleBase] type
+        a list of SampleBase type objects
+
+    Returns
+    -------
+    samples : list[Sample]
+        a list of Sample type objects
+    
+    """
+    return tuple([Sample(name=samplebase.name, value=samplebase.value) for samplebase in samplebases])
 
 def randvar_base_descent(*randvarbases) -> list[RandVar]:
     """Base conversion
@@ -39,6 +61,12 @@ class RandVec(JointDistribution):
     """
     def __init__(self, **joint_pspace: dict) -> None:
         super().__init__(**joint_pspace)
+
+        # validate pspace keys are Sample type objects
+        pspace_validated: dict = {
+            sample_base_descent(*k): v for k, v in self.pspace.items()
+        }
+        self.pspace: dict = pspace_validated
 
         # generate random vector components
         self.derive_marginals()
@@ -104,17 +132,25 @@ class RandVec(JointDistribution):
                 # randvar is a Fraction object
                 pass
             new_pspace: dict = {
-                (randvar*s for s in sample): prob for sample, prob in self.pspace.items()
+                tuple([randvar*s for s in sample]): prob for sample, prob in self.pspace.items()
                 }
         else:
+            # randvar is a RandVar object
             new_pspace: dict = {}
             for rv_sample, rv_prob in randvar.pspace.items():
                 for sample, prob in self.pspace.items():
-                    new_tup = tuple([rv_sample] + list(sample))
-                    new_prob = rv_prob*prob 
-                    new_pspace[new_tup] = new_prob
+                    new_tup = tuple([rv_sample*s for s in sample])
+                    # new_tup = tuple([rv_sample] + list(sample))
+                    new_prob = rv_prob*prob
+                    try:
+                        new_pspace[new_tup] += new_prob
+                    except KeyError:
+                        new_pspace[new_tup] = new_prob
 
         return RandVec(pspace=new_pspace)
+    
+    def __rmul__(self, randvar):
+        return self.__mul__(randvar)
 
     def __sub__(self, second_rvec):
         second_rvec = (-1)*second_rvec

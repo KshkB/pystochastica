@@ -1,4 +1,4 @@
-from ..core import RandVarBase
+from ..core import RandVarBase, JointDistribution
 from ..samples import Sample
 from ..simulations import RandVarSimulator
 from ..utils import convolve_dicts, dict_mul
@@ -59,7 +59,9 @@ class RandVar(RandVarBase):
 	
 	def __mul__(self, second_rv):
 		"""assumes self and second_rv are *independent*, use ``RandVec`` for dependent variables"""
-		if isinstance(second_rv, (int, float, Decimal, Fraction)):
+		if isinstance(second_rv, (int, float, Decimal, Fraction, JointDistribution)):
+			if isinstance(second_rv, JointDistribution):
+				return second_rv.__mul__(self) # delegate to RandVec.__mul__
 			try:
 				second_rv = Decimal(str(second_rv))
 			except InvalidOperation:

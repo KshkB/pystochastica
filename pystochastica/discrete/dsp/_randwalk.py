@@ -135,7 +135,12 @@ class RandWalk(DSP):
             ncols = 2
             nrows = sum(divmod(time_steps, ncols))
 
-        fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=(15, 8), squeeze=False)
+        try:
+            FIGSIZE: tuple = kwargs['FIGSIZE']
+        except KeyError:
+            FIGSIZE: tuple = (15, 8)
+
+        fig, axs = plt.subplots(ncols=ncols, nrows=nrows, figsize=FIGSIZE, squeeze=False)
         fig.suptitle(f"{time_steps} Random Walks")
         for i in range(nrows):
             for j in range(ncols):

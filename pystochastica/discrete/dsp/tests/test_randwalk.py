@@ -21,4 +21,4 @@ def test_rwalk_walkplot():
 @pytest.fixture(scope='function') 
 def test_rwalk_walkplots():
     rw = RandWalk(time_steps=10)
-    rw.plt_walks(1000)
+    rw.plt_walks(1000, FIGSIZE=(15, 15))

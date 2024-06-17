@@ -1,7 +1,7 @@
 from ..core import SampleBase
 from itertools import product
 from  functools import reduce
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from fractions import Fraction
 import numpy as np
 import sympy as sp
@@ -44,7 +44,12 @@ def generate_jdist(*marginals) -> dict:
     """
     sample_prob_pairs_list = []
     for mg_rv in marginals:
-        sample_prob_pairs = [(sample, Decimal(str(prob))) for sample, prob in mg_rv.pspace.items()]
+        try:
+            sample_prob_pairs = [(sample, Decimal(str(prob))) for sample, prob in mg_rv.pspace.items()]
+        except InvalidOperation:
+            # probabilties are Fraction type objects, leave as such
+            sample_prob_pairs = [(sample, prob) for sample, prob in mg_rv.pspace.items()]
+
         sample_prob_pairs_list += [sample_prob_pairs]
 
     sample_prob_pairs_all = product(*sample_prob_pairs_list)

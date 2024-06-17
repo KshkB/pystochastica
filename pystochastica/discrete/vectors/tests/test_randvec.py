@@ -1,5 +1,6 @@
 from ...samples import Sample
 from ...variables import RandVar
+from ...core import JointDistribution
 from ...utils import generate_jdist_random, generate_jdist
 from .. import RandVec
 from decimal import Decimal
@@ -139,9 +140,31 @@ def test_randvec_jd_randjd():
     assert all(random_randvec.V[i, i] > 0 for i in range(random_randvec.dimension)) # Cov(X, Y) < 0 only if X != Y; Cov(X, X) = Var(X) >= 0
 
 def test_randvec_prob():
-    
     rvec = RandVec(pspace=jd_X1_X2_dict)
     print(rvec.Prob('<=1.0'))
     print(rvec.Prob(['<=1.0', '==1.0']))
     assert isinstance(rvec.Prob('<=1.0'), (float, Decimal, Fraction))
     assert rvec.Prob('<=1.0') >= rvec.Prob(['<=1.0', '>=1.0'])
+
+def test_randvec_samplesvalidated():
+    rvec = RandVec(pspace=JointDistribution(pspace=generate_jdist_random()).pspace)
+    assert isinstance(rvec.sum(), RandVar)
+
+def test_randvec_lincomb():
+    rvec1 = RandVec(pspace=JointDistribution(pspace=generate_jdist_random(dimension=2)).pspace)
+    rvec2 = RandVec(pspace=JointDistribution(pspace=generate_jdist_random(dimension=2)).pspace)
+    rvec3 = -2*rvec1 - 5.5*rvec2
+    assert isinstance(rvec3.sum(), RandVar)
+
+def test_randvec_randvar_mul():
+    rvec = RandVec(pspace=JointDistribution(pspace=generate_jdist_random(dimension=2)).pspace)
+    rvec2 = RandVec(pspace=JointDistribution(pspace=generate_jdist_random(dimension=2)).pspace)
+
+    rvar_name = sp.Symbol('X')
+    rvar = RandVar(name=rvar_name, pspace={
+        Sample(name=rvar_name, value=-1): Fraction(25, 100), 
+        Sample(name=rvar_name, value=1): Fraction(55, 100),
+        Sample(name=rvar_name, value=0): Fraction(20, 100)})
+
+    rvec3 = rvar*rvec + 10*rvec2
+    assert isinstance(rvec3.sum(), RandVar)

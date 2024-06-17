@@ -16,10 +16,12 @@ The `pystochastica` library is hosted at `PyPi`, see [here](https://pypi...). Ru
 
 See jupyter notebooks, hosted at the following links, for guides on using `PyStochastica`.
 
-- [Random variables tutorial]() 
-- [Random vectors tutorial]()
-- [Random walks]()
-- [The mean-variance optimiser]()
+- [Random variables tutorial - initialisation]() 
+- [Random variables tutorial - forming combinations]()
+- [Random vectors tutorial - initialisation]()
+- [Random vectors tutorial - linear combinations]()
+- [Discrete stochastic processes]()
+- [Optimisers]()
 
 ## Contributions
 
