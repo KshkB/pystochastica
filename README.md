@@ -12,6 +12,10 @@ The `pystochastica` library is hosted at `PyPi`, see [here](https://pypi...). Ru
 
     $ pip install pystochastica
 
+Run the following code from command-line to find the current version number of the installation
+
+    $ python3 -c "import pystochastica; print(pystochastica.__version__)"
+
 ## Tutorials
 
 See jupyter notebooks, hosted at the following links, for guides on using `PyStochastica`.
@@ -22,6 +26,22 @@ See jupyter notebooks, hosted at the following links, for guides on using `PySto
 - [Random vectors tutorial - linear combinations]()
 - [Discrete stochastic processes]()
 - [Optimisers]()
+
+## Version numbering convention
+
+The `1.0.*` version number series contains the `pystochastica.discrete` package with core classes `RandVar` and `RandVec`. 
+Note that updates with new optimisers and discrete processes should be reflected through incrementing the least significant digit in `1.0.*`.
+
+The `1.*.x` version series contains major upgrades to `pystochastica.discrete` comprising the addition of new core classes. These might include 
+a `RandMtrx` class for random matrices and a `RandTensor` class for random tensors in line with comments in the Contributions section below.
+Note, e.g., that the `1.1.*` series would include wrappers on existing core classes, e.g., such as optimisers or discrete processes for 
+random matrices and tensors.
+
+The `2.*.*` version number series should include work on continuous random variables, hosted at a separate package site, `pystochastica.continuous`.
+Then `2.x.*` and `2.*.x` version series label progress as above.
+
+The `3.*.*` version number series is expected to contain classes linking the core classes in `pystochastica.discrete` and `pystochastica.continuous`.
+These may form a wholly separate package, such as `pystochastica.mixed`, where mixtures of discrete and continuous random variables may be formed.
 
 ## Contributions
 
